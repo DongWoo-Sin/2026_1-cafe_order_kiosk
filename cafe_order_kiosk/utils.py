@@ -1,34 +1,21 @@
-from __future__ import annotations
+# cafe_order_kiosk/utils.py
 
-from datetime import datetime, timezone
+def parse_command(command_str: str) -> tuple[str, list[str]]:
+    """명령어 문자열을 파싱하여 (명령어, 인자_리스트) 형태로 반환합니다."""
+    tokens = command_str.strip().split()
+    if not tokens:
+        return "", []
 
+    # 띄어쓰기가 포함된 명령어 예외 처리 ("주문 생성", "주문목록 목록" 등)
+    if (
+        len(tokens) >= 2
+        and tokens[0] in ["주문", "주문목록"]
+        and tokens[1] in ["생성", "선택", "추가", "삭제", "취소", "목록"]
+    ):
+        cmd = f"{tokens[0]} {tokens[1]}"
+        args = tokens[2:]
+    else:
+        cmd = tokens[0]
+        args = tokens[1:]
 
-def utc_now() -> datetime:
-    return datetime.now(timezone.utc)
-
-
-def format_money(amount: int) -> str:
-    return f"{amount:,}"
-
-def print_receipt(order):
-    """영수증 출력 (선택 기능)"""
-    print("\n==============================")
-    print("         🧾 영 수 증          ")
-    print("==============================")
-    print(def_order_info(order)) # 주문 번호, 일시 등
-    print("------------------------------")
-    for item in order.items:
-        print(f"{item.menu_name:<10} {item.quantity}개  {item.price:,}원")
-    print("------------------------------")
-    print(f"합계 금액: {order.total_amount:,}원")
-    print("==============================\n")
-
-def print_number_ticket(order_id):
-    """번호표 출력 (필수 기능)"""
-    print("\n==============================")
-    print("         🔔 대기 번호표        ")
-    print("==============================")
-    print(f"\n      고객님의 대기번호      ")
-    print(f"           [{order_id}]       \n")
-    print("  음식이 완료되면 불러드리겠습니다. ")
-    print("==============================\n")
+    return cmd, args
