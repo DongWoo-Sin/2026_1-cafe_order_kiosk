@@ -180,6 +180,9 @@ def handle_orders(store: KioskStore, args: list[str]) -> None:
         )
 
 
+# =====================================================================
+# 이 부분을 요구사항에 맞춰 전면 수정했습니다.
+# =====================================================================
 def handle_pay(store: KioskStore, state: CLIState, args: list[str]) -> None:
     if state.current_order_id is None:
         print("선택된 주문이 없습니다. 먼저 '주문 생성'을 사용하세요.")
@@ -209,6 +212,24 @@ def handle_pay(store: KioskStore, state: CLIState, args: list[str]) -> None:
         return
 
     print(f"주문 #{order.id} 결제 완료 ({method}).")
+    print("-" * 40)
+
+    # 1. 번호표 출력 (무조건 실행)
+    print_number_ticket(order.id)
+
+    # 2. 영수증 출력 선택 (Y / N)
+    while True:
+        receipt_choice = input("영수증을 출력하시겠습니까? (y/n): ").strip().lower()
+        if receipt_choice in {"y", "yes"}:
+            print_receipt_doc(order, method)
+            break
+        elif receipt_choice in {"n", "no"}:
+            print("영수증 출력을 취소했습니다.")
+            break
+        else:
+            print("잘못된 입력입니다. y 또는 n을 입력해 주세요.")
+            
+    print("-" * 40)
 
 
 def print_order(order) -> None:
@@ -261,3 +282,45 @@ def format_status(status: OrderStatus) -> str:
         OrderStatus.CANCELED: "취소",
     }
     return status_map.get(status, status.value)
+
+
+# =====================================================================
+# 새로 추가된 번호표 및 영수증 포맷팅 함수들입니다.
+# =====================================================================
+def print_number_ticket(order_id: int) -> None:
+    """번호표를 무조건 출력합니다."""
+    print("\n┌──────────────────────────────────────┐")
+    print("│             🔔 대기 번호표            │")
+    print("├──────────────────────────────────────┤")
+    print(f"│                                      │")
+    print(f"│          고객님의 대기번호           │")
+    print(f"│                 [{order_id:03d}]                │")
+    print(f"│                                      │")
+    print("│    주문이 완료되면 안내해 드립니다.  │")
+    print("└──────────────────────────────────────┘\n")
+
+
+def print_receipt_doc(order, method: str) -> None:
+    """선택 시 영수증 서식을 출력합니다."""
+    print("\n========================================")
+    print("               🧾 영 수 증              ")
+    print("========================================")
+    print(f" 주문 번호 : #{order.id}")
+    print(f" 결제 방식 : {method}")
+    if order.note:
+        print(f" 메모 사항 : {order.note}")
+    print("----------------------------------------")
+    print(" 상품명             수량            금액")
+    print("----------------------------------------")
+    
+    for item in order.items:
+        options = f" ({', '.join(item.options)})" if item.options else ""
+        item_title = f"{item.name}{options}"
+        # 한글 정렬 공백 맞춤이 어려울 수 있으므로 기본 간격 출력
+        print(f" {item_title:<16}  x{item.quantity:<4}  {format_money(item.line_total):>10}")
+        
+    print("----------------------------------------")
+    print(f" 합계 금액 : {format_money(order.total):>26}")
+    print("========================================")
+    print("        이용해 주셔서 감사합니다!       ")
+    print("========================================\n")
